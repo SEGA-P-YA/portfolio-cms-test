@@ -2,10 +2,253 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>portfolio-cms-test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>検証用表示ページ | portfolio-cms-test</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; background: #fff; color: #222; }
+  .notice { background: #fff7e0; border-bottom: 1px solid #e5cf8a; padding: 10px 16px; font-size: 13px; }
+  header { padding: 20px 16px 4px; max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #666; font-size: 13px; margin: 0 0 8px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 0 16px 48px; }
+  /* メインビジュアル */
+  .hero { position: relative; margin: 16px 0 8px; border-radius: 12px; overflow: hidden; background: #f2f2f2; aspect-ratio: 16/8; display: none; }
+  .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero .hero-title { position: absolute; left: 0; right: 0; bottom: 0; padding: 24px 16px 12px; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.55)); font-weight: 700; }
+  .hero .badge-featured { position: absolute; top: 10px; left: 10px; background: #e8590c; color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 999px; }
+  /* 操作系 */
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0 4px; }
+  .tab { border: 1px solid #ccc; background: #fff; border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+  .tab.active { background: #222; color: #fff; border-color: #222; }
+  .toggle { font-size: 13px; color: #444; display: inline-flex; gap: 6px; align-items: center; margin-left: auto; }
+  .status { font-size: 12px; color: #888; margin: 6px 0 0; }
+  /* ギャラリー */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-top: 14px; }
+  .card { border: 1px solid #e3e3e3; border-radius: 10px; overflow: hidden; cursor: pointer; background: #fff; }
+  .card img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: #f2f2f2; }
+  .card .meta { padding: 8px 10px 10px; }
+  .card .t { font-size: 14px; font-weight: 700; margin: 0 0 2px; }
+  .card .c { font-size: 12px; color: #777; margin: 0; }
+  .card.unpublished { opacity: .55; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 999px; margin-right: 4px; }
+  .badge-hidden { background: #868e96; color: #fff; }
+  .badge-feat { background: #e8590c; color: #fff; }
+  .empty { color: #888; font-size: 14px; padding: 24px 0; }
+  /* モーダル */
+  .modal-back { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+  .modal-back.open { display: flex; }
+  .modal { background: #fff; border-radius: 12px; max-width: 720px; width: 100%; max-height: 90vh; overflow: auto; padding: 18px; }
+  .modal img { width: 100%; border-radius: 8px; display: block; background: #f2f2f2; }
+  .modal h2 { font-size: 18px; margin: 12px 0 4px; }
+  .modal .c { color: #777; font-size: 13px; margin: 0 0 8px; }
+  .modal .desc { font-size: 14px; white-space: pre-wrap; line-height: 1.7; }
+  .detail { border-top: 1px solid #eee; margin-top: 14px; padding-top: 12px; display: none; }
+  .detail.open { display: block; }
+  .detail dt { font-size: 12px; color: #888; margin-top: 8px; }
+  .detail dd { margin: 2px 0 0; font-size: 14px; white-space: pre-wrap; }
+  .btn { border: 1px solid #222; background: #222; color: #fff; border-radius: 8px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
+  .btn.sub { background: #fff; color: #222; }
+  .row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+</style>
 </head>
 <body>
-<h1>Pages CMS テスト用リポジトリ</h1>
-<p>このページはCMS認証・編集機能の検証用です。本番サイトではありません。</p>
+<div class="notice">これは <strong>検証用の表示ページ</strong> です（テスト用リポジトリ portfolio-cms-test）。Pages CMSで編集した内容が、サイト表示にどう反映されるかを確認するためのもので、本番サイトではありません。</div>
+<header>
+  <h1>作品ギャラリー（検証用）</h1>
+  <p class="sub">データ取得元: リポジトリの works フォルダ（Pages CMSで編集する内容）</p>
+</header>
+<main>
+  <section class="hero" id="hero">
+    <span class="badge-featured">メインビジュアル</span>
+    <img id="heroImg" alt="">
+    <div class="hero-title" id="heroTitle"></div>
+  </section>
+
+  <div class="controls" id="tabs"></div>
+  <label class="toggle" style="margin:4px 0 0;">
+    <input type="checkbox" id="showUnpublished"> 非公開の作品も表示する（確認用）
+  </label>
+  <p class="status" id="status">読み込み中…</p>
+
+  <section class="grid" id="grid"></section>
+  <p class="empty" id="empty" style="display:none;">この条件の作品はありません。</p>
+</main>
+
+<div class="modal-back" id="modalBack">
+  <div class="modal" role="dialog" aria-modal="true">
+    <img id="mImg" alt="">
+    <h2 id="mTitle"></h2>
+    <p class="c" id="mMeta"></p>
+    <p class="desc" id="mDesc"></p>
+    <div class="detail" id="mDetail">
+      <p class="desc" id="dDesc"></p>
+      <dl>
+        <dt>制作担当範囲</dt><dd id="dRole"></dd>
+        <dt>使用媒体・掲載先</dt><dd id="dMedium"></dd>
+        <dt>クライアント情報</dt><dd id="dClient"></dd>
+        <dt>関連リンク</dt><dd id="dLink"></dd>
+      </dl>
+    </div>
+    <div class="row">
+      <button class="btn" id="mDetailBtn" style="display:none;">詳細を見る</button>
+      <button class="btn sub" id="mClose">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const REPO = "SEGA-P-YA/portfolio-cms-test";
+const CATEGORIES = ["ALL", "FAN ART", "COMMISSION", "WORKS", "ORIGINAL"];
+let works = [];
+let currentCategory = "ALL";
+
+function parseFrontmatter(text) {
+  const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!m) return {};
+  const data = {};
+  const lines = m[1].split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const km = line.match(/^([A-Za-z0-9_]+):\s*(.*)$/);
+    if (!km) continue;
+    const key = km[1];
+    let val = km[2].trim();
+    if (val === "|-" || val === "|" || val === ">-" || val === ">") {
+      const block = [];
+      while (i + 1 < lines.length && /^\s+/.test(lines[i + 1])) { block.push(lines[++i].replace(/^\s{2}/, "")); }
+      data[key] = block.join("\n");
+      continue;
+    }
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1);
+    if (val === "true") val = true;
+    else if (val === "false") val = false;
+    else if (/^-?\d+$/.test(val)) val = parseInt(val, 10);
+    data[key] = val;
+  }
+  return data;
+}
+
+function relPath(p) {
+  if (!p) return "";
+  return String(p).replace(/^\//, "");
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+async function load() {
+  const status = document.getElementById("status");
+  try {
+    const res = await fetch(`https://api.github.com/repos/${REPO}/contents/works?ref=main`);
+    if (!res.ok) throw new Error("works フォルダの取得に失敗しました");
+    const files = (await res.json()).filter(f => f.type === "file" && f.name.endsWith(".md"));
+    works = [];
+    for (const f of files) {
+      const r = await fetch(f.download_url);
+      const text = await r.text();
+      const d = parseFrontmatter(text);
+      d._file = f.name;
+      works.push(d);
+    }
+    works.sort((a, b) => {
+      const oa = typeof a.order === "number" ? a.order : 9999;
+      const ob = typeof b.order === "number" ? b.order : 9999;
+      return oa - ob || String(a.title || "").localeCompare(String(b.title || ""));
+    });
+    status.textContent = `作品データ ${works.length} 件を読み込みました（表示順の数字が小さい順）。`;
+    renderTabs();
+    render();
+  } catch (e) {
+    status.textContent = "読み込みに失敗しました。時間をおいて再読み込みしてください。（" + e.message + "）";
+  }
+}
+
+function visibleWorks() {
+  const showUnpub = document.getElementById("showUnpublished").checked;
+  return works.filter(w => {
+    if (!showUnpub && w.published === false) return false;
+    if (currentCategory !== "ALL" && w.category !== currentCategory) return false;
+    return true;
+  });
+}
+
+function renderTabs() {
+  const wrap = document.getElementById("tabs");
+  wrap.innerHTML = "";
+  for (const cat of CATEGORIES) {
+    const b = document.createElement("button");
+    b.className = "tab" + (cat === currentCategory ? " active" : "");
+    b.textContent = cat;
+    b.onclick = () => { currentCategory = cat; renderTabs(); render(); };
+    wrap.appendChild(b);
+  }
+}
+
+function render() {
+  const list = visibleWorks();
+  // メインビジュアル: featured かつ公開 の先頭
+  const heroWork = works.find(w => w.featured === true && w.published !== false);
+  const hero = document.getElementById("hero");
+  if (heroWork && (currentCategory === "ALL")) {
+    hero.style.display = "block";
+    document.getElementById("heroImg").src = relPath(heroWork.image);
+    document.getElementById("heroTitle").textContent = heroWork.title || "";
+  } else {
+    hero.style.display = "none";
+  }
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  document.getElementById("empty").style.display = list.length ? "none" : "block";
+  for (const w of list) {
+    const card = document.createElement("article");
+    card.className = "card" + (w.published === false ? " unpublished" : "");
+    const badges = [
+      w.published === false ? '<span class="badge badge-hidden">非公開</span>' : "",
+      w.featured === true ? '<span class="badge badge-feat">メインビジュアル</span>' : ""
+    ].join("");
+    card.innerHTML = `<img src="${esc(relPath(w.thumbnail || w.image))}" alt="">
+      <div class="meta"><p style="margin:0 0 4px;">${badges}</p>
+      <p class="t">${esc(w.title || "(タイトル未設定)")}</p>
+      <p class="c">${esc(w.category || "")} ${w.year ? " / " + esc(w.year) : ""} ${typeof w.order === "number" ? " / 表示順 " + w.order : ""}</p></div>`;
+    card.onclick = () => openModal(w);
+    grid.appendChild(card);
+  }
+}
+
+let modalWork = null;
+function openModal(w) {
+  modalWork = w;
+  document.getElementById("mImg").src = relPath(w.image);
+  document.getElementById("mTitle").textContent = w.title || "(タイトル未設定)";
+  document.getElementById("mMeta").textContent = `${w.category || ""} ${w.year ? " / " + w.year : ""}`;
+  document.getElementById("mDesc").textContent = w.description || "";
+  document.getElementById("mDetail").classList.remove("open");
+  const btn = document.getElementById("mDetailBtn");
+  // 詳細ページありの作品だけ「詳細を見る」を表示する（仕様書のルール）
+  if (w.hasDetail === true) {
+    btn.style.display = "inline-block";
+    btn.onclick = () => {
+      document.getElementById("dDesc").textContent = w.detailDescription || "";
+      document.getElementById("dRole").textContent = w.role || "";
+      document.getElementById("dMedium").textContent = w.medium || "";
+      document.getElementById("dClient").textContent = w.client || "";
+      const link = document.getElementById("dLink");
+      link.textContent = w.relatedLink || "";
+      document.getElementById("mDetail").classList.add("open");
+    };
+  } else {
+    btn.style.display = "none";
+  }
+  document.getElementById("modalBack").classList.add("open");
+}
+document.getElementById("mClose").onclick = () => document.getElementById("modalBack").classList.remove("open");
+document.getElementById("modalBack").addEventListener("click", e => {
+  if (e.target.id === "modalBack") e.currentTarget.classList.remove("open");
+});
+document.getElementById("showUnpublished").addEventListener("change", render);
+load();
+</script>
 </body>
 </html>
