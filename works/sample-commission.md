@@ -1,5 +1,5 @@
 ---
-title: 見本作品（個人依頼・詳細あり）
+title: タイトル変更しました
 image: /images/sample-commission.svg
 category: COMMISSION
 year: 2026
